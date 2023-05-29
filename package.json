@@ -1,0 +1,16 @@
+{
+  "name": "sicinfo-middleware",
+  "version": "0.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "dev": "NODE_ENV=develop node src",
+    "prod": " src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "http-errors": "github:jshttp/http-errors#semver:^v2.0"
+  },
+  "author": "",
+  "license": "ISC"
+}
