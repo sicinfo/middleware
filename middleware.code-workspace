@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../logs"
+		}
+	],
+	"settings": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2,
+		"files.exclude": {
+			"**/node_modules": true,
+			"*.code-workspace": true,
+			"**/*ignore": true
+		}
+	}
+}

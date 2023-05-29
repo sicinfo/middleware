@@ -1,0 +1,10 @@
+/.env
+/.next
+/etc
+
+/next.config.js
+/package-lock.json
+
+**/*copy*.js
+**/node_modules/
+**/tmp/

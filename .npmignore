@@ -1,0 +1,6 @@
+/.gitignore
+/.npmignore
+/test
+/middleware.code-workspace
+
+**/jsconfig.json
