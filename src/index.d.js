@@ -18,6 +18,4 @@
  * @property {string} [dirname]
  * @property {string} [cwd]
  * @property {string} [name]
- * @property {boolean} [test]
  */
-

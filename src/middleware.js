@@ -10,18 +10,23 @@ const { BadRequest, InternalServerError, isHttpError, NotFound } = require('http
 const ContentType = 'content-type';
 const TypeApplicationJson = 'application/json; charset=utf-8';
 
-module.exports = (/** @type {MiddlewareArgs} */ {
-  test = !!process.env.test,
-  NODE_ENV = process.env.NODE_ENV || 'deve',
-  NODE_PORT = Number.parseInt(process.env.NODE_PORT) || 3000,
-  etc = process.env.etc,
-  dist = process.env.dist || process.env.watch,
-  dirname = process.env.cwd || process.env.PWD,
-  cache = new Map(),
-  name = 'middleware',
-  server,
-  logging
-}) => {
+const symbol = Symbol();
+
+module.exports = function (
+  /** @type {MiddlewareArgs} */ {
+    NODE_ENV = (process.env.NODE_ENV || 'deve').slice(0, 4),
+    NODE_PORT = Number.parseInt(process.env.NODE_PORT) || 3000,
+    etc = process.env.etc,
+    dist = process.env.dist || process.env.watch,
+    dirname = process.env.cwd || process.env.PWD,
+    cache = new Map(),
+    name = 'middleware',
+    server,
+    logging
+  }
+) {
+
+  const test = NODE_ENV === 'test';
 
   if (!logging) logging = test || NODE_ENV.toLowerCase().startsWith('prod') ?
     (/** @type {...any} */ ...args) => { } :
@@ -47,59 +52,63 @@ module.exports = (/** @type {MiddlewareArgs} */ {
 
     logging(`-> ${name}: ${new Date().toISOString()} - HTTP ${req.method} ${req.url}`);
 
-    const [appname] = req.url.split('/').slice(1)
-    if (!appname) return send(res, new BadRequest('[Middleware] App undefined'))
-    if (/\./.test(appname)) return send(res, new BadRequest())
+    const [appName] = req.url.split('/').slice(1)
+    if (!appName) return send(res, new BadRequest('[Middleware] App undefined'))
+    if (/\./.test(appName)) return send(res, new BadRequest())
 
-    const _appname = pathJoin(dist, `${appname}-app`);
-    const appjson = pathJoin(_appname, `package.json`);
+    const appPath = pathJoin(dist, `${appName}-app`);
 
-    fsStat(_appname).then(
+    fsStat(appPath)
+      .then(
 
-      stats => {
-        if (!stats.isDirectory()) throw { code: 'ENOENT', path: '-app' }
-        return fsStat(appjson)
-      }
-
-    ).then(
-
-      stats => {
-        if (!stats.isFile()) throw { code: 'ENOENT', path: 'package.json' }
-        return require(_appname)
-      }
-
-    ).then(
-
-      router => {
-        try { new router({ req, res, etc }) }
-        catch (err) { res.end() }
-      }
-
-    ).catch(
-
-      err => {
-
-        if (['MODULE_NOT_FOUND', 'ENOENT'].includes(err.code)) {
-        
-          const msg0 = err.requestPath?.endsWith('-app') ? 'Main' :
-            err.path.endsWith('-app') ? 'App' :
-              err.path.endsWith('package.json') ? 'Json' :
-                err.requestPath ? 'Service' : 'Main';
-
-          const msg1 = 'not found';
-
-          send(res, new NotFound(`[Middleware] ${msg0} ${msg1} (${appname})`))
+        stats => {
+          if (!stats.isDirectory()) throw { code: 'ENOENT', path: '-app' }
+          return fsStat(pathJoin(appPath, `package.json`))
         }
 
-        else send(res, new InternalServerError(err))
-      }
+      )
+      .then(
 
-    )
+        stats => {
+          if (!stats.isFile()) throw { code: 'ENOENT', path: 'package.json' }
+          return require(appPath)
+        }
+
+      )
+      .then(
+
+        (/** @type {any} */ router) => {
+          try { new router(res) }
+          catch (err) { res.end() }
+        }
+
+      )
+      .catch(
+
+        err => {
+
+          if (['MODULE_NOT_FOUND', 'ENOENT'].includes(err.code)) {
+
+            const msg0 = err.requestPath?.endsWith('-app') ? 'Main' :
+              err.path.endsWith('-app') ? 'App' :
+                err.path.endsWith('package.json') ? 'Json' :
+                  err.requestPath ? 'Service' : 'Main';
+
+            const msg1 = 'not found';
+
+            send(res, new NotFound(`[Middleware] ${msg0} ${msg1} (${appName})`))
+          }
+
+          else send(res, new InternalServerError(err))
+        }
+
+      )
   })
 
   if (!test) {
     if (server?.listen) server.listen(
       NODE_PORT,
+      '127.0.0.1',
       NODE_ENV === 'prod' ? undefined : /** @this {NetServer} */ function () {
 
         const { address, port } = /** @type {NetAddressInfo} */ (this.address())
@@ -119,6 +128,5 @@ module.exports = (/** @type {MiddlewareArgs} */ {
     return { server, logging }
   }
 
-  return { server, NODE_ENV, NODE_PORT, etc, dist, cache, test, name, dirname, logging }
-
+  return { server, NODE_ENV, NODE_PORT, etc, dist, cache, name, dirname, logging }
 }

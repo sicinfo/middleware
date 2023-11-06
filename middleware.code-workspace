@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "../logs"
+		},
+		{
+			"path": "test"
+		},
+		{
+			"path": "src"
 		}
 	],
 	"settings": {
