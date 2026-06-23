@@ -1,10 +1,12 @@
 /**
  * 
  */
+//@ts-nocheck
 
 const assert = require('assert');
 
-const middleware = require('sicinfo-middleware/src/middleware')
+
+const middleware = require('sicinfo-middleware/dist/middleware')
 
 describe('middleware basic test', () => {
 

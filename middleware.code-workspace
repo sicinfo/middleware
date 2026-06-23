@@ -1,15 +1,23 @@
 {
 	"folders": [
 		{
+			"name": "middleware",
 			"path": "."
 		},
 		{
+			"name": "logs",
 			"path": "../logs"
 		},
 		{
+			"name": "test",
 			"path": "test"
 		},
 		{
+			"name": "dist",
+			"path": "dist"
+		},
+		{
+			"name": "src",
 			"path": "src"
 		}
 	],

@@ -1,132 +1,55 @@
 /**
  * @author
+ * 
  */
 
-const { createServer } = require('http')
-const { join: pathJoin } = require('path')
-const { stat: fsStat } = require('fs/promises')
-const { BadRequest, InternalServerError, isHttpError, NotFound } = require('http-errors');
+import { createServer } from "http";
+// ts-ignore
+// import { BadRequest, InternalServerError, isHttpError, NotFound } from 'http-errors';
+import { join as pathJoin } from 'path';
 
-const ContentType = 'content-type';
-const TypeApplicationJson = 'application/json; charset=utf-8';
+import _logging from './logging';
+import _server from './server';
+import _listen from './listen';
 
-const symbol = Symbol();
+/** @arg {MiddlewareArgs} arg */ 
+export default ({
+  NODE_ENV = (process.env.npm_package_config_NODE_ENV || process.env.NODE_ENV || 'deve').slice(0, 4),
+  NODE_PORT = Number.parseInt(process.env.npm_package_config_port || process.env.NODE_PORT || '') || 3000,
+  host = process.env.npm_package_config_host || process.env.host || 'localhost',
+  etc = process.env.npm_package_config_etc || process.env.etc,
+  dist = process.env.npm_package_config_dist || process.env.npm_config_prefix || process.env.dist || ((/** @type {string} */ arg) => /,/.test(arg) ? arg.split(',')[0] : arg)(process.env.watch || ''),
+  dirname = process.env.npm_package_config_dirname || process.env.cwd || process.env.PWD || '',
+  cache = new Map(),
+  name = process.env.npm_package_name,
+  server,
+  logging
+  
+  // NODE_ENV = (process.env.NODE_ENV || 'deve').slice(0, 4),
+  // NODE_PORT = Number.parseInt(process.env.NODE_PORT) || 3000,
+  // host = process.env.host || 'localhost',
+  // etc = process.env.etc,
+  // dist = process.env.dist || (dist => /,/.test(dist) ? dist.split(',')[0] : dist)(process.env.watch),
+  // dirname = process.env.cwd || process.env.PWD,
+  // cache = new Map(),
+  // name,
+  // server,
+  // logging
+}) => {
 
-module.exports = function (
-  /** @type {MiddlewareArgs} */ {
-    NODE_ENV = (process.env.NODE_ENV || 'deve').slice(0, 4),
-    NODE_PORT = Number.parseInt(process.env.NODE_PORT) || 3000,
-    etc = process.env.etc,
-    dist = process.env.dist || process.env.watch,
-    dirname = process.env.cwd || process.env.PWD,
-    cache = new Map(),
-    name = 'middleware',
-    server,
-    logging
-  }
-) {
+  const test = NODE_ENV.startsWith('t');
 
-  const test = NODE_ENV === 'test';
-
-  if (!logging) logging = test || NODE_ENV.toLowerCase().startsWith('prod') ?
-    (/** @type {...any} */ ...args) => { } :
-    (/** @type {...any} */ ...args) => { console.info(args.join('\n')) }
-
-  if (!etc) etc = pathJoin(dirname, 'etc')
+  if (!name) name = NODE_ENV;
+  if (!logging) logging = _logging(NODE_ENV.startsWith('p'));
+  if (!etc) etc = pathJoin(dirname, 'etc');
   if (!dist) dist = pathJoin(dirname, 'dist')
-  else if (/,/.test(dist)) dist = dist.split(',')[0]
 
-  /** 
-   * @param {HttpServerResponse} res
-   * @param {any} err
-   */
-  const send = (res, err) => {
-    logging('-> constructor', err.stack || err, '\n', typeof err === 'object'  && Object.keys(err));
-    if (!isHttpError(err)) err = new InternalServerError(err)
-    res.setHeader(ContentType, TypeApplicationJson)
-    res.statusCode = err.status
-    res.end(JSON.stringify(err))
-  }
-
-  if (server === undefined) server = createServer((req, res) => {
-
-    logging(`-> ${name}: ${new Date().toISOString()} - HTTP ${req.method} ${req.url}`);
-
-    const [appName] = req.url.split('/').slice(1)
-    if (!appName) return send(res, new BadRequest('[Middleware] App undefined'))
-    if (/\./.test(appName)) return send(res, new BadRequest())
-
-    const appPath = pathJoin(dist, `${appName}-app`);
-
-    fsStat(appPath)
-      .then(
-
-        stats => {
-          if (!stats.isDirectory()) throw { code: 'ENOENT', path: '-app' }
-          return fsStat(pathJoin(appPath, `package.json`))
-        }
-
-      )
-      .then(
-
-        stats => {
-          if (!stats.isFile()) throw { code: 'ENOENT', path: 'package.json' }
-          return require(appPath)
-        }
-
-      )
-      .then(
-
-        (/** @type {any} */ router) => {
-          try { new router(res) }
-          catch (err) { res.end() }
-        }
-
-      )
-      .catch(
-
-        err => {
-
-          if (['MODULE_NOT_FOUND', 'ENOENT'].includes(err.code)) {
-
-            const msg0 = err.requestPath?.endsWith('-app') ? 'Main' :
-              err.path.endsWith('-app') ? 'App' :
-                err.path.endsWith('package.json') ? 'Json' :
-                  err.requestPath ? 'Service' : 'Main';
-
-            const msg1 = 'not found';
-
-            send(res, new NotFound(`[Middleware] ${msg0} ${msg1} (${appName})`))
-          }
-
-          else send(res, new InternalServerError(err))
-        }
-
-      )
-  })
+  if (server === undefined) server = createServer(_server({ logging, name, dist }))
 
   if (!test) {
-    if (server?.listen) server.listen(
-      NODE_PORT,
-      '127.0.0.1',
-      NODE_ENV === 'prod' ? undefined : /** @this {NetServer} */ function () {
-
-        const { address, port } = /** @type {NetAddressInfo} */ (this.address())
-
-        const args = [
-          `${process.title.split(' ')[0]} ${process.version}`,
-          `${new Date().toISOString()}: Listening: (${NODE_ENV})`,
-          `-> ${address}:${port}${dirname}`,
-          '\n.'.repeat(0)
-        ]
-
-        const maxLength = 1 * args.reduce((a, b) => Math.max(a, b.length), 0)
-
-        logging([' ', '-'.repeat(maxLength), ...args].join('\n'));
-      }
-    )
-    return { server, logging }
+    if (server?.listen) server.listen(NODE_PORT, host, _listen({ dirname, NODE_ENV, logging }))
+    return { server, logging, dirname, NODE_ENV }
   }
+  else return { server, host, NODE_ENV, NODE_PORT, etc, dist, cache, name, dirname, logging }
 
-  return { server, NODE_ENV, NODE_PORT, etc, dist, cache, name, dirname, logging }
 }

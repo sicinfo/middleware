@@ -2,11 +2,13 @@
   "name": "sicinfo-middleware",
   "version": "0.1.1",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "NODE_ENV=develop node src",
     "prod": " src",
-    "test": "mocha"
+    "test": "mocha test/test.spec.js",
+    "rollup": "rollup -c -w"
   },
   "dependencies": {
     "http-errors": "github:jshttp/http-errors#semver:v2"
