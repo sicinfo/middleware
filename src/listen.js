@@ -20,5 +20,6 @@ export default (
 
       const maxLength = 1 * args.reduce((a, b) => Math.max(a, b.length), 0)
 
-      logging([' ', '-'.repeat(maxLength), ...args].join('\n'));
+      // logging([' ', '-'.repeat(maxLength), ...args].join('\n'));
+      console.log([' ', '-'.repeat(maxLength), ...args].join('\n'));
     }
