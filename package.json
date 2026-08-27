@@ -13,7 +13,8 @@
     "test": "mocha test/test.spec.js",
     "rollup": "rollup -c -w"
   },
-  "dependencies": {
+ "dependencies": {
+    "http-errors": "^2.0.1",
   },
   "devDependencies": {
   },
