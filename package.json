@@ -2,8 +2,11 @@
   "name": "sicinfo-middleware",
   "version": "0.1.1",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/script.js",
   "type": "module",
+  "files":[
+    "dist/script.js"
+  ],
   "scripts": {
     "dev": "NODE_ENV=develop node src",
     "prod": " src",
@@ -11,7 +14,8 @@
     "rollup": "rollup -c -w"
   },
   "dependencies": {
-    "http-errors": "github:jshttp/http-errors#semver:v2"
+  },
+  "devDependencies": {
   },
   "author": "",
   "license": "ISC"
