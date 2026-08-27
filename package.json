@@ -1,6 +1,6 @@
 {
   "name": "sicinfo-middleware",
-  "version": "0.1.3+build.1",
+  "version": "0.1.3+build.3",
   "description": "",
   "main": "dist/script.js",
   "type": "module",
